@@ -14,6 +14,7 @@ services:
       context: .
       dockerfile: client/Dockerfile
     image: ffmpeg-remote-client:local
+    network_mode: host
     depends_on:
       - ffmpeg-remote-server
     profiles:

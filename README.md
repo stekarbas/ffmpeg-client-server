@@ -74,6 +74,16 @@ Run client command via Docker (example):
 make ffmpeg-remote ARGS="--server http://ffmpeg-remote-server:18080 ping"
 ```
 
+Note about `.local` hostnames:
+- Some container images cannot resolve mDNS (`.local`) names reliably.
+- If `m5.local` fails, add a static host mapping when running the client:
+
+```bash
+make ffmpeg-remote ADD_HOST="m5.local:192.168.1.201" ARGS="--server http://m5.local:18080 ping"
+```
+
+- `make ffmpeg-remote` uses `docker compose run --build`, so client image changes are picked up automatically.
+
 If host port `18080` is already used, run server on another host port:
 
 ```bash
@@ -88,9 +98,18 @@ make docker-compose-down
 
 ## Docker Hub + CI/CD (GitHub Actions)
 
-Workflow file: `.github/workflows/docker-publish.yml`
+Workflow files:
+- `.github/workflows/ci.yml`
+- `.github/workflows/docker-publish.yml`
 
-The workflow builds and pushes multi-arch images (`linux/amd64`, `linux/arm64`) for both server and client.
+CI (`ci.yml`) validates Docker Compose and builds both images (no push):
+- runs on pull requests
+- runs on pushes to non-`main` branches
+
+CD (`docker-publish.yml`) builds and pushes multi-arch images (`linux/amd64`, `linux/arm64`) for both server and client:
+- runs on push to `main`
+- runs on version tags (`v*`)
+- supports manual trigger (`workflow_dispatch`)
 
 ### 1) Create Docker Hub repositories
 
@@ -111,9 +130,11 @@ Add this repository variable:
 
 ### 4) Trigger behavior
 
-- Push to `main`: builds and pushes images (includes `latest` tag)
-- Push tag `v*` (example `v0.1.0`): builds and pushes versioned tags
-- Manual run via `workflow_dispatch` is supported
+- Pull request: CI build + compose validation (no push)
+- Push to feature branch: CI build + compose validation (no push)
+- Push to `main`: CD build + push to Docker Hub (includes `latest` tag)
+- Push tag `v*` (example `v0.1.0`): CD build + push versioned tags
+- Manual run: CD workflow can be started via `workflow_dispatch`
 
 ### 5) Suggested release flow
 
