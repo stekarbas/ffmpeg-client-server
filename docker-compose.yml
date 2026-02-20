@@ -1,0 +1,20 @@
+services:
+  ffmpeg-remote-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: ffmpeg-remote-server:local
+    ports:
+      - "${HOST_PORT:-18080}:18080"
+    environment:
+      PORT: 18080
+
+  ffmpeg-remote-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: ffmpeg-remote-client:local
+    depends_on:
+      - ffmpeg-remote-server
+    profiles:
+      - tools
